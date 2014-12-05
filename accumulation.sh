@@ -1,5 +1,5 @@
 #!/bin/sh -x
-
+# Enviromental Science for Social Change, 2014
 
 ## Download TRMM data from http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate
 
