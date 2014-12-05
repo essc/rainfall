@@ -30,7 +30,7 @@ echo "Temporal coverage is "${MIN}","${MAX}".  Downloading data from http://disc
 
 echo "Finished downloading data."
 
-ncdump -tc 3hourly_trmm.nc
+ncdump -tc temp/3hourly_trmm.nc
 
 ## Import data to GRASS GIS
 
@@ -38,21 +38,21 @@ ncdump -tc 3hourly_trmm.nc
 g.region region=pacific -p
 
 # Remove data from previous run
-g.remove -f --q type=rast pattern=b.*
+#g.remove -f --q type=rast pattern=b.*
+g.mremove -f --q rast=b.*
 
 ## Import netcdf layers
 
-r.in.gdal --quiet input=3hourly_trmm.nc output=b -ok
-g.list type=rast pattern=b* > temp/file.txt
-sort -t . -k 2 -g file.txt > temp/filesort.txt  
+r.in.gdal --quiet input=temp/3hourly_trmm.nc output=b -ok
+g.mlist type=rast pattern=b* > temp/file.txt
+sort -t . -k 2 -g temp/file.txt > temp/filesort.txt  
 
 ## Register layers as strds
 
-t.unregister maps=3hr_rainrate file=temp/filesort.txt
-#t.unregister file=filesort.txt
+t.unregister input=3hr_rainrate file=temp/filesort.txt
 
-#t.register -i --quiet --overwrite type=rast input='3hr_rainrate' start="${START}" \
-#increment="3 hours" file=filesort.txt
+t.register -i --quiet --overwrite type=rast input='3hr_rainrate' \
+start="${START}" increment="3 hours" file=temp/filesort.txt
 
 ## Convert 3hourly rainrate to hourly
 #t.rast.mapcalc --overwrite input=3hr_rainrate output=hourly_rainrate basename=hourly_rainrate expression="int(3hr_rainrate * 3)"
