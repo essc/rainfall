@@ -26,7 +26,7 @@ echo "Temporal coverage is "${MIN}","${MAX}".  Downloading data from http://disc
 
 #ncks -O -v r -d time,${MIN},${MAX} -d lon,115.00,155.00 -d lat,4.00,22.00 \
 #http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate \
-#3hourly_trmm.nc
+#temp/3hourly_trmm.nc
 
 echo "Finished downloading data."
 
@@ -43,12 +43,12 @@ g.remove -f --q type=rast pattern=b.*
 ## Import netcdf layers
 
 r.in.gdal --quiet input=3hourly_trmm.nc output=b -ok
-g.list type=rast pattern=b* > file.txt
-sort -t . -k 2 -g file.txt > filesort.txt  
+g.list type=rast pattern=b* > temp/file.txt
+sort -t . -k 2 -g file.txt > temp/filesort.txt  
 
 ## Register layers as strds
 
-t.unregister maps=3hr_rainrate file=filesort.txt
+t.unregister maps=3hr_rainrate file=temp/filesort.txt
 #t.unregister file=filesort.txt
 
 #t.register -i --quiet --overwrite type=rast input='3hr_rainrate' start="${START}" \
