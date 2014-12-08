@@ -3,6 +3,6 @@
 *~
 
 # Others
-web/
+web/*.png
 temp/
 grass/

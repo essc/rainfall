@@ -27,7 +27,7 @@ for i in anomaly_2yr anomaly_5yr anomaly_10yr anomaly_25yr anomaly_50yr anomaly_
       d.rast --overwrite map=$i
       d.vect --overwrite map=lake_laguna width=1 type=boundary color='100,100,100'
       d.vect --overwrite map=lake_lamesa width=1 type=boundary color='100,100,100'
-      d.vect --overwrite map=ph_waterways width=1 type=line color='150,150,150'
+      d.vect --overwrite map=ph_waterways width=1 type=line color='200,200,200'
       d.vect --overwrite map=ph_land width=2 type=boundary color='100,100,100'
       d.vect --overwrite map=site color=red fcolor=red icon=basic/circle size=20 attribute_column=site lsize=15 yref=bottom
       #d.rast.num -f map=2year_anomaly grid_color=none text_color=grey 
