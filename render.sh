@@ -9,12 +9,12 @@ g.region pacific -pm
 d.mon stop=cairo
 d.mon --overwrite width=180 height=72 resolution=12 output=web/acc.png start=cairo
 d.erase
-d.rast --overwrite map=10day_hourly_0 
+d.rast --overwrite map=tenday_hourly_0
 d.grid size=5:00:00 color=grey fontsize=12 width=2
-d.vect --overwrite map=ph_provinces_10m_NE width=1.2 type=boundary color='black'
+d.vect --overwrite map=ne_admin_10m width=1.2 type=boundary color='black'
 d.vect map='PAR' type=boundary width=4 color='white'
 d.vect map=accumulation_contour color='white'
-d.legend rast=10day_hourly_0 range=0,600 labelnum=5 at=0,50,2,500 use=0,0,50,80,100,120,150,180,200,400,500 fontsize=15 -df
+d.legend map=tenday_hourly_0 range=0,600 labelnum=5 at=0,50,2,500 use=0,0,50,80,100,120,150,180,200,400,500 fontscale=10 -f
 #d.text text="10day Accumulated Rainfall(2014-12-04)" align=lc 
 
 #script.run_command('d.mon', start='png', output='view.png', overwrite=True)

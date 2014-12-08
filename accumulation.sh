@@ -123,4 +123,5 @@ g.region region=pacific
 r.out.gdal input=tenday_hourly_0 output=web/tenday_hourly_"${END}".tif
 
 echo "Temporal coverage is "${START}" UTC to "${END}" UTC". > web/log.txt
+echo "r.info tenday_hourly_0" >> web/log.txt
 
