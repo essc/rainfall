@@ -4,8 +4,8 @@
 ## Download TRMM data from http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate
 
 # Define start and end date.
-END=$(date -u +"%Y-%m-%d %H:00:00")
-START=$(date -u --date='480 hours ago' +"%Y-%m-%d %H:00:00")
+END=$(date -u --date='6 hours ago' +"%Y-%m-%d %H:00:00")
+START=$(date -u --date='456 hours ago' +"%Y-%m-%d %H:00:00")
 TEN_DAYS=$(date -u --date='240 hours ago' +"%Y-%m-%d %H:00:00")
 
 # Define number of time-step (3hr).
@@ -24,13 +24,13 @@ LOWER_STEP=`echo "${MAX} - ${STEP}" | bc`
 
 echo "Temporal coverage is "${MIN}","${MAX}".  Downloading data from http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate"
 
-#ncks -O -v r -d time,${MIN},${MAX} -d lon,115.00,155.00 -d lat,4.00,22.00 \
-#http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate \
-#temp/3hourly_trmm.nc
+ncks -O -v r -d time,${MIN},${MAX} -d lon,115.00,155.00 -d lat,4.00,22.00 \
+http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate \
+temp/3hourly_trmm.nc
 
 echo "Finished downloading data."
 
-ncdump -tc 3hourly_trmm.nc
+ncdump -tc temp/3hourly_trmm.nc
 
 ## Import data to GRASS GIS
 
@@ -38,44 +38,46 @@ ncdump -tc 3hourly_trmm.nc
 g.region region=pacific -p
 
 # Remove data from previous run
-g.remove -f --q type=rast pattern=b.*
+#g.remove -f --q type=rast pattern=b.*
+g.mremove -f --q rast=b.*
 
 ## Import netcdf layers
+gdal_translate -of "GTiff" temp/3hourly_trmm.nc temp/3hourly_trmm.tif
+r.in.gdal --quiet input=temp/3hourly_trmm.tif output=b -ok
+g.mlist type=rast pattern=b* > temp/file.txt
+sort -t . -k 2 -g temp/file.txt > temp/filesort.txt  
 
-r.in.gdal --quiet input=3hourly_trmm.nc output=b -ok
-g.list type=rast pattern=b* > temp/file.txt
-sort -t . -k 2 -g file.txt > temp/filesort.txt  
-
+#g.region rast=b.1 save=pacific -p
 ## Register layers as strds
 
-t.unregister maps=3hr_rainrate file=temp/filesort.txt
-#t.unregister file=filesort.txt
+t.unregister input=trmm_3hr_rainrate file=temp/filesort.txt
+#t.remove inputs=trmm_3hr_rainrate -rf
 
-#t.register -i --quiet --overwrite type=rast input='3hr_rainrate' start="${START}" \
-#increment="3 hours" file=filesort.txt
+t.register -i --quiet --overwrite type=rast input='trmm_3hr_rainrate' \
+start="${START}" increment="3 hours" file=temp/filesort.txt
 
 ## Convert 3hourly rainrate to hourly
-#t.rast.mapcalc --overwrite input=3hr_rainrate output=hourly_rainrate basename=hourly_rainrate expression="int(3hr_rainrate * 3)"
+#t.remove inputs=hourly_rainrate -rf
+t.rast.mapcalc --overwrite input=trmm_3hr_rainrate output=hourly_rainrate basename=hourly_rainrate expression="int(trmm_3hr_rainrate * 3)"
 
 
-## Create 1 day aggregate from the compute hourly rainrate
-
-#t.rast.aggregate --overwrite input="hourly_rainrate" \
-#output="1day_aggregate" base="1day_aggregate" granularity="1 days" \
-#method="sum" sampling="start"
+## Create 1 day aggregate from the computed hourly rainrate
+t.rast.aggregate --overwrite input="hourly_rainrate" \
+output="daily_aggregate" base="daily_aggregate" granularity="1 days" \
+method="sum" sampling="start"
 
 ## Create 10 day accumulation
-#t.rast.aggregate --overwrite input="hourly_rainrate" \
-#output="10day_hourly" base="10day_hourly" granularity="10 days" \
-#method="sum" sampling="start" where="start_time == '${TEN_DAYS}'"
+t.rast.aggregate --overwrite input="hourly_rainrate" \
+output="tenday_hourly" base="tenday_hourly" granularity="10 days" \
+method="sum" sampling="start" where="start_time == '${TEN_DAYS}'"
 
-#r.contour --overwrite input=10day_hourly_0 output=accumulation_contour step=50 minlevel=0
-#r.colors map=10day_hourly_0 rules=accumulation.rules
+r.contour --overwrite input=tenday_hourly_0 output=accumulation_contour step=50 minlevel=0
+r.colors map=tenday_hourly_0 rules=accumulation.rules
 
 # testing t.rast.accumulate
-#t.rast.accumulate --overwrite input=10day_hourly output=10day_accumulation \
-#base=10day_accumulation start="${TEN_DAYS}" stop="${END}" \
-#cycle="10 days" granularity="1 days" method=mean
+t.rast.accumulate --overwrite input=tenday_hourly output=tenday_accumulation \
+base=tenday_accumulation start="${TEN_DAYS}" stop="${END}" \
+cycle="10 days" granularity="1 days" method=mean
 
 ## Compare to returnperiod
 
