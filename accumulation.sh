@@ -4,7 +4,7 @@
 ## Download TRMM data from http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate
 
 # Define start and end date.
-END=$(date -u --date='6 hours ago' +"%Y-%m-%d %H:00:00")
+END=$(date -u --date='3 hours ago' +"%Y-%m-%d %H:00:00")
 START=$(date -u --date='456 hours ago' +"%Y-%m-%d %H:00:00")
 TEN_DAYS=$(date -u --date='240 hours ago' +"%Y-%m-%d %H:00:00")
 
@@ -72,50 +72,55 @@ output="tenday_hourly" base="tenday_hourly" granularity="10 days" \
 method="sum" sampling="start" where="start_time == '${TEN_DAYS}'"
 
 r.contour --overwrite input=tenday_hourly_0 output=accumulation_contour step=50 minlevel=0
-r.colors map=tenday_hourly_0 rules=accumulation.rules
+r.colors map=tenday_hourly_0 rules=rules/accumulation.rules
 
 # testing t.rast.accumulate
-t.rast.accumulate --overwrite input=tenday_hourly output=tenday_accumulation \
-base=tenday_accumulation start="${TEN_DAYS}" stop="${END}" \
-cycle="10 days" granularity="1 days" method=mean
+#t.rast.accumulate --overwrite input=tenday_hourly output=tenday_accumulation \
+#base=tenday_accumulation start="${TEN_DAYS}" stop="${END}" \
+#cycle="10 days" granularity="1 days" method=mean
 
 ## Compare to returnperiod
 
 # 2yr returnperiod
-#g.region region=manila
+g.region region=manila
 
-#r.mapcalc --overwrite "2year_anomaly = int(10day_hourly_0 - 2yr_rtnprd)"
-#r.colors map=2year_anomaly rules=anomaly.rules
+r.mapcalc --overwrite "anomaly_2yr = int(tenday_hourly_0 - rtnprd_2yr)"
+r.colors map=anomaly_2yr rules=rules/anomaly.rules
+
+r.mapcalc --overwrite "anomaly_5yr = int(tenday_hourly_0 - rtnprd_5yr)"
+r.colors map=anomaly_5yr rules=rules/anomaly.rules
 
 # 10yr returnperiod
-#r.mapcalc --overwrite "10year_anomaly = int(10day_hourly_0 - 10yr_rtnprd)"
-#r.colors map=10year_anomaly rules=anomaly.rules
+r.mapcalc --overwrite "anomaly_10yr = int(tenday_hourly_0 - rtnprd_10yr)"
+r.colors map=anomaly_10yr rules=rules/anomaly.rules
 
 # 25yr returnperiod
-#r.mapcalc --overwrite "25year_anomaly = int(10day_hourly_0 - 25yr_rtnprd)"
-#r.colors map=25year_anomaly rules=anomaly.rules
+r.mapcalc --overwrite "anomaly_25yr = int(tenday_hourly_0 - rtnprd_25yr)"
+r.colors map=anomaly_25yr rules=rules/anomaly.rules
 
 # 50yr returnperiod
-#r.mapcalc --overwrite "50year_anomaly = int(10day_hourly_0 - 50yr_rtnprd)"
-#r.colors map=50year_anomaly rules=anomaly.rules
+r.mapcalc --overwrite "anomaly_50yr = int(tenday_hourly_0 - rtnprd_50yr)"
+r.colors map=anomaly_50yr rules=rules/anomaly.rules
 
 # 100yr returnperiod
-#r.mapcalc --o "100year_anomaly = int(10day_hourly_0 - 100yr_rtnprd)"
-#r.colors map=100year_anomaly rules=anomaly.rules
+r.mapcalc --o "anomaly_100yr = int(tenday_hourly_0 - rtnprd_100yr)"
+r.colors map=anomaly_100yr rules=rules/anomaly.rules
 
 ## Get data from sites
  
-#t.vect.observe.strds --overwrite --q input=site strds=hourly_rainrate output=site_hourly vector_output=site_hourly column=hourly
-#t.vect.observe.strds --overwrite input=site strds=10day_hourly output=site_10day vector_output=site_10day column=acc10day
+t.vect.observe.strds --overwrite input=site strds=hourly_rainrate output=site_hourly vector_output=site_hourly column=hourly
+t.vect.observe.strds --overwrite input=site strds=tenday_hourly output=site_10day vector_output=site_10day column=acc10day
 
 #export
 
-#t.vect.db.select input=site_hourly columns=hourly separator=comma where="cat = 2" > quiapo_hourly.txt
-#t.vect.db.select input=site_10day columns=acc10day separator=comma where="cat = 2" > quiapo_10day.txt
+t.vect.db.select input=site_hourly columns=hourly separator=, where="cat = 2" > web/quiapo_hourly.txt
+t.vect.db.select input=site_10day columns=acc10day separator=, where="cat = 2" > web/quiapo_10day.txt
 
-#t.vect.db.select input=site_hourly columns=hourly separator=comma where="cat = 1" > payatas_hourly.txt
-#t.vect.db.select input=site_10day columns=acc10day separator=comma where="cat = 1" > payatas_10day.txt
+t.vect.db.select input=site_hourly columns=hourly separator=, where="cat = 1" > web/payatas_hourly.txt
+t.vect.db.select input=site_10day columns=acc10day separator=, where="cat = 1" > web/payatas_10day.txt
 
+g.region region=pacific
+r.out.gdal input=tenday_hourly_0 output=web/tenday_hourly_"${END}".tif
 
-echo "Temporal coverage is "${START}" UTC to "${END}" UTC".
+echo "Temporal coverage is "${START}" UTC to "${END}" UTC". > web/log.txt
 
