@@ -4,7 +4,7 @@
 ## Download TRMM data from http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate
 
 # Define start and end date.
-END=$(date -u --date='3 hours ago' +"%Y-%m-%d %H:00:00")
+END=$(date -u --date='1 hours ago' +"%Y-%m-%d %H:00:00")
 START=$(date -u --date='456 hours ago' +"%Y-%m-%d %H:00:00")
 TEN_DAYS=$(date -u --date='240 hours ago' +"%Y-%m-%d %H:00:00")
 
@@ -69,7 +69,7 @@ method="sum" sampling="start"
 ## Create 10 day accumulation
 t.rast.aggregate --overwrite input="hourly_rainrate" \
 output="tenday_hourly" base="tenday_hourly" granularity="10 days" \
-method="sum" sampling="start" where="start_time == '${TEN_DAYS}'"
+method="sum" sampling="start" where="end_time == '${TEN_DAYS}'"
 
 r.contour --overwrite input=tenday_hourly_0 output=accumulation_contour step=50 minlevel=0
 r.colors map=tenday_hourly_0 rules=rules/accumulation.rules
