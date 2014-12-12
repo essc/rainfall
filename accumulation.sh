@@ -26,14 +26,14 @@ echo "Download data from "${MIN}" to "${MAX}" at http://disc2.nascom.nasa.gov:80
 # Log downloading process
 echo "Downloading data  from "${START}" UTC to "${END}" UTC". > web/log.txt
 
-#ncks -O -v r -d time,${MIN},${MAX} -d lon,115.00,155.00 -d lat,4.00,22.00 \
-#http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate \
-#temp/3hourly_trmm.nc
+ncks -O -v r -d time,${MIN},${MAX} -d lon,115.00,155.00 -d lat,4.00,22.00 \
+http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate \
+temp/3hourly_trmm.nc
 
 echo "Finished downloading data."
 
 #Get data timestamp
-ncdump -tc temp/3hourly_trmm.nc
+ncdump -tc -v time temp/3hourly_trmm.nc
 DATA_END=`ncdump -t -v time temp/3hourly_trmm.nc | sed -e '1,/data:/d' -e '$d' | tail -1 | \
 sed -e 's/\"//g' -e 's/\;//g' -e 's/^[ \t]*//' | xargs -0 date +"%Y-%m-%d %H:%M:%S" -d`
 DATA_START=`date +"%Y-%m-%d %H:%M:%S" --date="${DATA_END} 456 hour ago"`
