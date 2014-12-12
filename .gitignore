@@ -4,5 +4,6 @@
 
 # Others
 web/*.png
+web/log.txt
 temp/
 grass/
