@@ -4,9 +4,8 @@
 ## Download TRMM data from http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate
 
 # Define start and end date.
-END=$(date -u --date='1 hours ago' +"%Y-%m-%d %H:00:00")
+END=$(date -u  +"%Y-%m-%d %H:00:00")
 START=$(date -u --date='456 hours ago' +"%Y-%m-%d %H:00:00")
-TEN_DAYS=$(date -u --date='240 hours ago' +"%Y-%m-%d %H:00:00")
 
 # Define number of time-step (3hr).
 STEP="160" #i.e. 20 days
@@ -22,15 +21,26 @@ MIN=`echo "(${DAY_START}*8)+1" | bc`
 # Calculate minimum time
 LOWER_STEP=`echo "${MAX} - ${STEP}" | bc`
 
-echo "Temporal coverage is "${MIN}","${MAX}".  Downloading data from http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate"
+echo "Download data from "${MIN}" to "${MAX}" at http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate"
 
-ncks -O -v r -d time,${MIN},${MAX} -d lon,115.00,155.00 -d lat,4.00,22.00 \
-http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate \
-temp/3hourly_trmm.nc
+# Log downloading process
+echo "Downloading data  from "${START}" UTC to "${END}" UTC". > web/log.txt
+
+#ncks -O -v r -d time,${MIN},${MAX} -d lon,115.00,155.00 -d lat,4.00,22.00 \
+#http://disc2.nascom.nasa.gov:80/dods/3B42RT_V7_rainrate \
+#temp/3hourly_trmm.nc
 
 echo "Finished downloading data."
 
+#Get data timestamp
 ncdump -tc temp/3hourly_trmm.nc
+DATA_END=`ncdump -t -v time temp/3hourly_trmm.nc | sed -e '1,/data:/d' -e '$d' | tail -1 | \
+sed -e 's/\"//g' -e 's/\;//g' -e 's/^[ \t]*//' | xargs -0 date +"%Y-%m-%d %H:%M:%S" -d`
+DATA_START=`date +"%Y-%m-%d %H:%M:%S" --date="${DATA_END} 456 hour ago"`
+TEN_DAYS=`date +"%Y-%m-%d %H:%M:%S" --date="${DATA_END} 240 hour ago"`
+
+echo "Temporal coverage is "${DATA_START}" UTC to "${DATA_END}" UTC". >> web/log.txt
+
 
 ## Import data to GRASS GIS
 
@@ -47,17 +57,13 @@ r.in.gdal --quiet input=temp/3hourly_trmm.tif output=b -ok
 g.mlist type=rast pattern=b* > temp/file.txt
 sort -t . -k 2 -g temp/file.txt > temp/filesort.txt  
 
-#g.region rast=b.1 save=pacific -p
 ## Register layers as strds
-
 t.unregister input=trmm_3hr_rainrate file=temp/filesort.txt
-#t.remove inputs=trmm_3hr_rainrate -rf
 
 t.register -i --quiet --overwrite type=rast input='trmm_3hr_rainrate' \
-start="${START}" increment="3 hours" file=temp/filesort.txt
+start="${DATA_START}" increment="3 hours" file=temp/filesort.txt
 
 ## Convert 3hourly rainrate to hourly
-#t.remove inputs=hourly_rainrate -rf
 t.rast.mapcalc --overwrite input=trmm_3hr_rainrate output=hourly_rainrate basename=hourly_rainrate expression="int(trmm_3hr_rainrate * 3)"
 
 
@@ -122,6 +128,6 @@ t.vect.db.select input=site_10day columns=acc10day separator=, where="cat = 1" >
 g.region region=pacific
 r.out.gdal input=tenday_hourly_0 output=web/tenday_hourly_"${END}".tif
 
-echo "Temporal coverage is "${TEN_DAYS}" UTC to "${END}" UTC". > web/log.txt
+
 #echo "r.info tenday_hourly_0" >> web/log.txt
 
